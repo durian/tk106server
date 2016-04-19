@@ -571,7 +571,7 @@ class TK106RequestHandler(socketserver.BaseRequestHandler):
                         item = self.server._pq.get() # ( stamp, (imei, cmd) )
                         # stamp some local (thread) running time?
                         #if stamp > time.time - thread_start_time: ...
-                        item_imei = item[1][0] # (5743542542.34, (46784673648372, "A12,10\r\n") )
+                        item_imei = item[1][0] # (5743542542.34, (4678467364xxxx, "A12,10\r\n") )
                         #self.info( "item_imei="+str(item_imei)+", item_snr="+str(self.snr) )
                         if int(item_imei) == int(self.imei) or int(item_imei) == int(self.snr): #snr for local comms
                             item_stamp = float(item[0])
@@ -649,7 +649,7 @@ class TK106RequestHandler(socketserver.BaseRequestHandler):
             except IndexError:
                 self.error("Could not handle A21 'cmd' file.")
             self.info("1234")
-        elif cmd[0:3] == 'A23': # 'A23,78.69.179.212,9300'
+        elif cmd[0:3] == 'A23': # 'A23,78.69.255.255,9300'
             params = cmd[4:].split(",")
             self.info(params)
             try:
