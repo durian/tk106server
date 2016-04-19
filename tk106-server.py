@@ -205,8 +205,8 @@ class TK106:
     def parse(self, msg):
         if not msg:
             return
-        #$$R154,866771020125224,AAA,35,56.069868,13.402848,151112085528,A,8,18,0,193,1.6,78,24,38067,240|24|2FA9|0B9C,0000,0002|0002|0000|097E|0000,00000001,,1,0000*E3
-        # $$A30,866771020125224,A70,,,,,*F7
+        #$$R154,0ximei,AAA,35,55.069868,12.402848,151112085528,A,8,18,0,193,1.6,78,24,38067,240|24|2FA9|0B9C,0000,0002|0002|0000|097E|0000,00000001,,1,0000*E3
+        # $$A30,0ximei,A70,,,,,*F7
         bits = msg.split(",")
         if len(bits) < 5:
             return
@@ -258,8 +258,8 @@ class TK106:
             
         if len(bits) < 23:
             return
-        self.lat          = float(bits[4])  # 56.069868
-        self.lon          = float(bits[5])  # 13.402848
+        self.lat          = float(bits[4])  # 53.069868
+        self.lon          = float(bits[5])  # 12.402848
         self.datetime     = bits[6]         # 151112085528
         self.datetime_str = "20"+self.datetime[0:6]+"@"+self.datetime[6:8]+":"+self.datetime[8:10]+":"+self.datetime[10:12]
         self.pos_status   = bits[7]         # A
@@ -340,9 +340,10 @@ class TK106RequestHandler(socketserver.BaseRequestHandler):
         Called when a new tracker is initialised.
         """
         # read r.queue file here?
-        item = (4, (866771020125224, "A10")) #A10 is position report, long interval takes long time to start
+        # Fill in required __IMEI__
+        item = (4, (__IMEI__, "A10")) #A10 is position report, long interval takes long time to start
         #r.put(item)
-        item = (20, (866771020125224, "B05,1,56.069748,13.402491,1000,0,1") ) #geofence Hrod
+        item = (20, (__IMEI__, "B05,1,53.069748,12.402491,1000,0,1") ) #geofence coordinates
         #r.put(item)
         if self.poshandler:
             self.poshandler.on_start()
@@ -492,7 +493,7 @@ class TK106RequestHandler(socketserver.BaseRequestHandler):
                 # we also need an expected answer, if we have sent a command
                 
                 # TK106
-                # $$R154,866771020125224,AAA,35,56.069868,13.402848,151112085528,A,8,18,0,193,1.6,78,24,38067,240|24|2FA9|0B9C,0000,0002|0002|0000|097E|0000,00000001,,1,0000*E3
+                # $$R154,0ximei,AAA,35,53.069868,12.402848,151112085528,A,8,18,0,193,1.6,78,24,38067,240|24|2FA9|0B9C,0000,0002|0002|0000|097E|0000,00000001,,1,0000*E3
                 if data[0:2] == "$$": # MESSAGE, comes every time like this
                     #how to determine first one?
                     if self.imei == self.snr: #check protocol or something?
@@ -681,7 +682,7 @@ class TK106RequestHandler(socketserver.BaseRequestHandler):
             except IndexError:
                 self.error("Could not handle F08 'cmd' file.")
         #A21,Connection mode,IP address,   Port,APN,APN user name,APN password
-        #A21,              1,78.69.184.128,9030,telenor?,,
+        #A21,              1,255.255.255.255,9030,telenor?,,
     def finish(self):
         self.info('handle finish')
         self.on_finish()
@@ -724,9 +725,9 @@ def b2s(b):
 def msg_A21(imei, conn_mode, ip, port, apn):
     '''
     GPRS Sending
-    @@H48,353358017784062,A21,1,67.203.13.26,8800,,,*C9
+    @@H48,35335801778xxxx,A21,1,67.203.13.26,8800,,,*C9
     GPRS Reply
-    $$H28,353358017784062,A21,OK*F4\r\n   <-- we need an expected answer string
+    $$H28,35335801778xx,A21,OK*F4\r\n   <-- we need an expected answer string
     '''
     msg_part = str(imei)+",A21,"+str(conn_mode)+","+str(ip)+","+str(port)+","+str(apn)+",,*"
     msg = "@@A"+str(len(msg_part)+5)+","+msg_part
@@ -738,9 +739,9 @@ def msg_A21(imei, conn_mode, ip, port, apn):
 def msg_A23(imei, ip, port):
     '''
     GPRS Sending
-    @@H48,353358017784062,A21,1,67.203.13.26,8800,,,*C9
+    @@H48,35335801778xxxx,A21,1,67.203.13.26,8800,,,*C9
     GPRS Reply
-    $$H28,353358017784062,A21,OK*F4\r\n   <-- we need an expected answer string
+    $$H28,35335801778xxxx,A21,OK*F4\r\n   <-- we need an expected answer string
     '''
     msg_part = str(imei)+",A23,"+str(ip)+","+str(port)+"*"
     msg = "@@A"+str(len(msg_part)+5)+","+msg_part
@@ -759,7 +760,7 @@ def msg_A12(imei, iv):
 
 def msg_A10(imei):
     '''
-    @@Q25,353358017784062,A10*6A\r\n
+    @@Q25,35335801778xxxx,A10*6A\r\n
     '''
     msg_part = str(imei)+",A10*"
     msg = "@@A"+str(len(msg_part)+5)+","+msg_part
@@ -769,7 +770,7 @@ def msg_A10(imei):
 
 def msg_A70(imei):
     '''
-    @@T25,353358017784062,A70*93\r\n
+    @@T25,35335801778xxxx,A70*93\r\n
     '''
     msg_part = str(imei)+",A70*"
     msg = "@@A"+str(len(msg_part)+5)+","+msg_part
@@ -779,12 +780,12 @@ def msg_A70(imei):
 
 def msg_B05(imei, fnum, lat, lon, rad, alrm_in, alrm_out):
     '''
-    @@H57,353358017784062,B05,1,22.913191,114.079882,1000,0,1*96\r\n
+    @@H57,35335801778xxxx,B05,1,22.913191,114.079882,1000,0,1*96\r\n
 
-    20151118 15:38:35 [866771020125224] (20, (866771020125224, 'B05,1,56.069748,13.402491,1000,0,1'))
-    20151118 15:38:35 [866771020125224] ['1', '56.069748', '13.402491', '1000', '0', '1']
-    20151118 15:38:35 [866771020125224] @@A56,866771020125224,B05,1,56.069748,13.402491,1000,0,1*56
-    20151118 15:38:37 [866771020125224] line[0]: ($$A28,866771020125224,B05,OK*E7)
+    20151118 15:38:35 [86677102012xxxx] (20, (86677102012xxxx, 'B05,1,53.069748,12.402491,1000,0,1'))
+    20151118 15:38:35 [86677102012xxxx] ['1', '56.069748', '13.402491', '1000', '0', '1']
+    20151118 15:38:35 [86677102012xxxx] @@A56,86677102012xxxx,B05,1,52.069748,11.402491,1000,0,1*56
+    20151118 15:38:37 [86677102012xxxx] line[0]: ($$A28,86677102012xxxx,B05,OK*E7)
     '''
     msg_part = "%s,B05,%i,%.6f,%.6f,%i,%i,%i*" % (imei, int(fnum), float(lat), float(lon), int(rad), int(alrm_in), int(alrm_out))
     msg = "@@A"+str(len(msg_part)+5)+","+msg_part
@@ -835,10 +836,9 @@ if __name__ == '__main__':
     r.put(item)
 
     # Setting geofence easier with SMS? Or sms replies sms, grps replies gprs?
-    item = (20, (866771020125224, "B05,1,56.069748,13.402491,1000,0,1") )
+    item = (20, (86677102012xxxx, "B05,1,51.069748,11.402491,1000,0,1") )
     r.put(item)
-    asteN 51.39840241 5.74052811
-    B05,2,51.39840241,5.74052811,100,1,1
+    B05,2,53.39840241,4.74052811,100,1,1
     '''
     
     # Default settings
@@ -875,19 +875,6 @@ if __name__ == '__main__':
     if watcher_port == 0:
         watcher_port = port + 1
         
-    #print( crc('@@Q25,353358017784062,A10*') ) -> 6A
-    #print( crc('@@S28,353358017784062,A11,10*') ) -> FD
-    #print( crc('$$c154,866771020125224,AAA,35,56.069871,13.402888,151112145720,A,9,15,0,196,0.8,61,24,59779,240|24|2FA9|0B9C,0000,0002|0002|0000|0909|0000,00000001,,1,0000*') ) -> DD
-    #sys.exit(1)
-
-    #@@H48,353358017784062,A21,1,67.203.13.26,8800,,,*C9
-    #print( msg_A21(353358017784062, 1, '67.203.13.26', 8800) )
-    #sys.exit(1)
-
-    # Hrod: 56.069748,13.402491
-    #print( msg_B05(353358017784062, 1, 56.069748,13.402491, 1000, 0, 1) )
-    #sys.exit(1)
-
     if list_dirs:
         #dirs = sorted( os.listdir(".") )
         dirs = sorted([x for x in os.listdir(".") if x.startswith("tk106nr_")])
@@ -946,8 +933,7 @@ if __name__ == '__main__':
     #d = datetime.datetime(2015,11,18,10,10,46) # UTC time
     #print( calendar.timegm(d.timetuple()) )    # to unix epoch
     #
-    #wget 'https://api.clockworksms.com/http/send.aspx?key=38594006a32dacc5f74218820c0c0ff6aaff28e0&to=46723668298&content=0000,A12,18,3'
-
+    
     # This loops checks the directories, and if there is a timeout, kills subprocess if necessary
     x = len(info.imeis)
     sunshine = True
@@ -971,37 +957,6 @@ if __name__ == '__main__':
                         # os.execl(sys.executable, sys.executable, *sys.argv)
                         # os.execv(sys.executable, [sys.executable] + sys.argv)
                         os.execl(sys.executable, 'python3', __file__, *sys.argv[1:])
-            '''
-            if lock.acquire(True, 1.0):
-                item = r.get() #always in (0, (0, CMD)) format
-                lock.release()
-                if int(item[0]) == 0 and int(item[1][0]) == 0:
-                        if item[1][1] == "QUIT":
-                            glogger.info("QUIT")
-                else:
-                    pass #PUT IT BACK
-            else:
-                glogger.info( "No lock aqcuired." )
-            '''
-            '''
-            We could check the list:
-
-            telnet localhost 9031
-            INFO
-            ["1181/866771020125224","1183/866771020125224","1184/866771020125224","1208/866771020125224"]
-            ["1181","1183","1184","1208"]
-            OK
-
-            to see if any un-finished ones, check "last" timestamp:
-
-            ls -l tk106nr_1183
-            total 20
-            -rw-rw-r-- 1 pberck pberck  13 Dec 27 22:52 bytes
-            -rw-rw-r-- 1 pberck pberck  15 Dec 27 18:00 imei
-            -rw-rw-r-- 1 pberck pberck   4 Dec 27 22:52 last
-            -rw-rw-r-- 1 pberck pberck 164 Dec 27 22:52 raw
-            -rw-rw-r-- 1 pberck pberck  49 Dec 27 22:52 xyzzy
-            '''
         except KeyboardInterrupt:
             glogger.info("KeyboardInterrupt")
             sunshine = False
