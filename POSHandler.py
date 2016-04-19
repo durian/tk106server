@@ -42,7 +42,7 @@ class POSHandler():
         """
         #print( self.obj.pos )
         # if self.imei == ... :
-        ping(self.obj.pos, "6f4f0eeee33e8360")
+        ping(self.obj.pos, "KEY")
         pass
 
     def on_stationary(self):
